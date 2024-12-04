@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: bank-wallet-engine
+  datasource:
+    url: jdbc:postgresql://localhost:5432/walletdb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    validation:
+      fail-on-unknown-properties: false
+
+  liquibase:
+    change-log: classpath:db/changelog/changelog.yaml
+    enabled: true
