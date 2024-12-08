@@ -1,4 +1,4 @@
-CREATE TABLE transaction (
+CREATE TABLE IF NOT EXISTS transaction (
 id UUID PRIMARY KEY,
 wallet_id UUID NOT NULL,
 operation_type VARCHAR(50) NOT NULL,

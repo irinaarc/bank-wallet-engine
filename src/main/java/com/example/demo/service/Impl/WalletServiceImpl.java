@@ -5,6 +5,7 @@ import com.example.demo.entity.Wallet;
 import com.example.demo.repository.WalletRepository;
 import com.example.demo.service.WalletService;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Setter
 public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
@@ -30,6 +32,7 @@ public class WalletServiceImpl implements WalletService {
                 .balance(BigDecimal.ZERO)
                 .createdAt(LocalDateTime.now())
                 .build();
+
         return walletRepository.save(wallet).getId();
     }
 }
