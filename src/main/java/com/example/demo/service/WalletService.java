@@ -13,5 +13,5 @@ public interface WalletService {
 
     WalletDto performOperation(UUID walletId, OperationType operationType, BigDecimal amount);
 
-    WalletDto getBalance(UUID walletId);
+    BigDecimal getBalance(UUID walletId);
 }

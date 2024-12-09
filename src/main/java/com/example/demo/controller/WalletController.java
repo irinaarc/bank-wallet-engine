@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.math.BigDecimal;
 
 import java.util.UUID;
 
@@ -34,10 +35,9 @@ public class WalletController {
                                                       @RequestBody WalletOperationRequest request) {
         return ResponseEntity.ok(walletService.performOperation(walletId, request.getOperationType(), request.getAmount()));
     }
-
     @GetMapping("/balance/{walletId}")
-    public ResponseEntity<WalletDto> getBalance(@PathVariable UUID walletId) {
-        WalletDto walletDto = walletService.getBalance(walletId);
-        return ResponseEntity.ok(walletDto);
+    public ResponseEntity<BigDecimal> getBalance(@PathVariable UUID walletId) {
+        BigDecimal balance = walletService.getBalance(walletId);
+        return ResponseEntity.ok(balance);
     }
 }
