@@ -7,11 +7,13 @@ import com.example.demo.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @RequestMapping("/api/v1/wallet")
 @Slf4j
@@ -31,10 +33,17 @@ public class WalletController {
     }
 
     @PostMapping("/operation/{walletId}")
-    public ResponseEntity<WalletDto> performOperation(@PathVariable UUID walletId,
-                                                      @RequestBody WalletOperationRequest request) {
-        return ResponseEntity.ok(walletService.performOperation(walletId, request.getOperationType(), request.getAmount()));
+    public CompletableFuture<ResponseEntity<WalletDto>> performOperation(@PathVariable UUID walletId,
+                                                                         @RequestBody WalletOperationRequest request) {
+        return walletService.performOperation(walletId, request.getOperationType(), request.getAmount())
+                .thenApply(walletDto -> ResponseEntity.ok(walletDto))
+                .exceptionally(ex -> {
+                    // Обработка ошибок, например, 500 Internal Server Error
+                    log.error("Error performing operation: {}", ex.getMessage());
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                });
     }
+
     @GetMapping("/balance/{walletId}")
     public ResponseEntity<BigDecimal> getBalance(@PathVariable UUID walletId) {
         BigDecimal balance = walletService.getBalance(walletId);

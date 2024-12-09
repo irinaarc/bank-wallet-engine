@@ -5,18 +5,22 @@ import com.example.demo.entity.OperationType;
 import com.example.demo.entity.Wallet;
 import com.example.demo.repository.WalletRepository;
 import com.example.demo.service.WalletService;
+import com.example.demo.util.InsufficientFundsException;
 import com.example.demo.util.InvalidOperationTypeException;
 import com.example.demo.util.WalletNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -40,34 +44,52 @@ public class WalletServiceImpl implements WalletService {
         return walletRepository.save(wallet).getId();
     }
 
+    @Async
     @Override
     @Transactional
-    public WalletDto performOperation(UUID walletId, OperationType operationType, BigDecimal amount) {
-        Wallet wallet = walletRepository.findById(walletId)
-                .orElseThrow(() -> new WalletNotFoundException(walletId));
+    public CompletableFuture<WalletDto> performOperation(UUID walletId,
+                                                         OperationType operationType, BigDecimal amount) {
+        log.info("Попытка выполнить операцию {} на кошельке с ID: {} на сумму: {}", operationType, walletId, amount);
+        try {
+            Wallet wallet = walletRepository.findById(walletId)
+                    .orElseThrow(() -> {
+                                log.error("Кошелёк с ID: {} не найден", walletId);
+                                return new WalletNotFoundException(walletId);
+                            }
+                    );
 
-        switch (operationType) {
-            case DEPOSIT:
-                wallet.setBalance(wallet.getBalance().add(amount));
-                break;
-            case WITHDRAW:
-                if (wallet.getBalance().compareTo(amount) < 0) {
-                    throw new RuntimeException("Недостаточно средств для совершения операции");
-                }
-                wallet.setBalance(wallet.getBalance().subtract(amount));
-                break;
-            default:
-                throw new InvalidOperationTypeException("Некорректный тип операции: " + operationType +
-                        ". Доступные операции: DEPOSIT, WITHDRAW.");
+            switch (operationType) {
+                case DEPOSIT:
+                    wallet.setBalance(wallet.getBalance().add(amount));
+                    log.info("Пополнение кошелька с ID: {} на сумму: {}", walletId, amount);
+                    break;
+                case WITHDRAW:
+                    if (wallet.getBalance().compareTo(amount) < 0) {
+                        log.error("Недостаточно средств для операции снятия с кошелька с ID: {}. Баланс: {}, " +
+                                "Запрашиваемая сумма: {}", walletId, wallet.getBalance(), amount);
+                        throw new InsufficientFundsException("Недостаточно средств для совершения операции");
+                    }
+                    wallet.setBalance(wallet.getBalance().subtract(amount));
+                    log.info("Снятие средств с кошелька с ID: {} на сумму: {}", walletId, amount);
+                    break;
+                default:
+                    log.error("Некорректный тип операции: {}", operationType);
+                    throw new InvalidOperationTypeException("Некорректный тип операции: " + operationType);
+            }
+
+            walletRepository.save(wallet);
+            WalletDto walletDto = WalletDto.builder()
+                    .id(wallet.getId())
+                    .phoneNumber(wallet.getPhoneNumber())
+                    .balance(wallet.getBalance())
+                    .createdAt(wallet.getCreatedAt())
+                    .build();
+
+            return CompletableFuture.completedFuture(walletDto);
+
+        } catch (OptimisticLockingFailureException e) {
+            throw new RuntimeException("Конфликт при записи, попробуйте снова", e);
         }
-
-        walletRepository.save(wallet);
-        return WalletDto.builder()
-                .id(wallet.getId())
-                .phoneNumber(wallet.getPhoneNumber())
-                .balance(wallet.getBalance())
-                .createdAt(wallet.getCreatedAt())
-                .build();
     }
 
 

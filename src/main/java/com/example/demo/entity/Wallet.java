@@ -3,6 +3,7 @@ package com.example.demo.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,9 +26,13 @@ public class Wallet {
     @Column(name = "phone_number", nullable = false)
     private String phoneNumber;
 
+    @PositiveOrZero(message = "Balance cannot be negative")
     @Column(name = "balance", nullable = false)
     private BigDecimal balance;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Version
+    private Long version;
 }

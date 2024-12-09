@@ -1,5 +1,6 @@
 package com.example.demo.advice;
 
+import com.example.demo.util.InsufficientFundsException;
 import com.example.demo.util.InvalidOperationTypeException;
 import com.example.demo.util.WalletNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidOperationTypeException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<Map<String, String>> handleInvalidOperationTypeException(InvalidOperationTypeException ex) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @ExceptionHandler(InsufficientFundsException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<Map<String, String>> handleInsufficientFundsException(InsufficientFundsException ex) {
         Map<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
         return ResponseEntity.badRequest().body(errorResponse);
