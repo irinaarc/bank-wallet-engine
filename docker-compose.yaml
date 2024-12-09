@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  base-project-pg:
+    image: postgres:17
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=walletdb
+    ports:
+      - '5432:5432'
